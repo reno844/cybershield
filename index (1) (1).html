@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberShield | Threat Analysis & Response Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #060b14;
+    --bg-secondary: #0d1520;
+    --bg-card: #0f1a28;
+    --bg-card-hover: #152033;
+    --accent-green: #00e5a0;
+    --accent-red: #ff2d55;
+    --accent-blue: #00b4ff;
+    --accent-yellow: #ffd700;
+    --accent-orange: #ff6b35;
+    --text-primary: #e0eaf8;
+    --text-secondary: #7a9bb8;
+    --text-muted: #3d5a78;
+    --border: rgba(0, 229, 160, 0.15);
+    --border-bright: rgba(0, 229, 160, 0.4);
+    --glow-green: 0 0 20px rgba(0, 229, 160, 0.3);
+    --glow-red: 0 0 20px rgba(255, 45, 85, 0.3);
+    --glow-blue: 0 0 20px rgba(0, 180, 255, 0.3);
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    cursor: default;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,160,0.012) 2px, rgba(0,229,160,0.012) 4px);
+    pointer-events: none; z-index: 0;
+  }
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--accent-green); border-radius: 3px; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 1000;
+    background: rgba(6, 11, 20, 0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900; font-size: 1.2rem;
+    color: var(--accent-green);
+    text-decoration: none;
+    letter-spacing: 2px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo span.bracket { color: var(--accent-red); }
+  .logo-pulse {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent-red);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,45,85,0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(255,45,85,0); }
+  }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--text-secondary); text-decoration: none;
+    font-size: 0.85rem; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 1px; background: var(--accent-green);
+    transition: width 0.3s;
+  }
+  .nav-links a:hover { color: var(--accent-green); }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-status {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; color: var(--accent-green);
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); animation: pulse 1.5s infinite; }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .hamburger span { width: 24px; height: 2px; background: var(--accent-green); transition: 0.3s; }
+
+  /* HERO */
+  #hero {
+    position: relative; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  #matrix-canvas {
+    position: absolute; inset: 0; z-index: 1;
+    opacity: 0.6;
+  }
+  #network-canvas {
+    position: absolute; inset: 0; z-index: 2;
+  }
+  .hero-content {
+    position: relative; z-index: 3;
+    text-align: center; padding: 0 1rem;
+  }
+  .hero-tag {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+    padding: 4px 16px; letter-spacing: 3px;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    animation: fadeInDown 0.8s ease both;
+  }
+  .hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2.5rem, 7vw, 6rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin-bottom: 1rem;
+    animation: fadeInUp 1s ease 0.2s both;
+  }
+  .hero-title .line1 { color: var(--text-primary); }
+  .hero-title .line2 {
+    color: var(--accent-green);
+    text-shadow: 0 0 40px rgba(0,229,160,0.5);
+  }
+  .hero-subtitle {
+    font-size: 1.15rem; color: var(--text-secondary);
+    max-width: 580px; margin: 0 auto 2.5rem;
+    animation: fadeInUp 1s ease 0.4s both;
+  }
+  .hero-cta {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    animation: fadeInUp 1s ease 0.6s both;
+  }
+  .btn {
+    padding: 12px 32px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700; font-size: 0.9rem;
+    letter-spacing: 2px; text-transform: uppercase;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: all 0.3s;
+  }
+  .btn-primary {
+    background: var(--accent-green); color: #000;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  .btn-primary:hover {
+    background: #00ffc3;
+    box-shadow: var(--glow-green);
+    transform: translateY(-2px);
+  }
+  .btn-outline {
+    background: transparent; color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  .btn-outline:hover {
+    background: rgba(255,45,85,0.1);
+    box-shadow: var(--glow-red);
+    transform: translateY(-2px);
+  }
+  .hero-stats {
+    position: absolute; bottom: 3rem; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 4rem;
+    z-index: 3; animation: fadeInUp 1s ease 0.8s both;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem; font-weight: 700;
+    color: var(--accent-green);
+    text-shadow: 0 0 20px rgba(0,229,160,0.5);
+  }
+  .hero-stat-label {
+    font-size: 0.7rem; color: var(--text-muted);
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  .scroll-indicator {
+    position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    z-index: 3; animation: bounce 2s infinite;
+    color: var(--text-muted); font-size: 0.7rem;
+    letter-spacing: 2px; text-align: center;
+  }
+  .scroll-line {
+    width: 1px; height: 40px; background: linear-gradient(to bottom, var(--accent-green), transparent);
+    margin: 8px auto 0;
+  }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(8px)} }
+  @keyframes fadeInDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeInUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+  /* SECTIONS */
+  section { padding: 6rem 0; position: relative; z-index: 1; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 2rem; }
+  .section-header { text-align: center; margin-bottom: 4rem; }
+  .section-tag {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem; color: var(--accent-blue);
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.15;
+  }
+  .section-title span { color: var(--accent-green); }
+  .section-line {
+    width: 80px; height: 2px;
+    background: linear-gradient(90deg, var(--accent-green), transparent);
+    margin: 1.25rem auto 1rem;
+  }
+  .section-desc { color: var(--text-secondary); max-width: 600px; margin: 0 auto; font-size: 1rem; }
+
+  /* LIVE FEED TICKER */
+  .threat-ticker {
+    background: rgba(255,45,85,0.08);
+    border-top: 1px solid rgba(255,45,85,0.3);
+    border-bottom: 1px solid rgba(255,45,85,0.3);
+    padding: 10px 0; overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem; color: var(--accent-red);
+    position: relative; z-index: 10;
+  }
+  .ticker-label {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--accent-red); color: #000;
+    padding: 0 16px;
+    display: flex; align-items: center;
+    font-weight: 700; letter-spacing: 2px;
+    z-index: 2; font-family: 'Rajdhani', sans-serif;
+  }
+  .ticker-track {
+    display: flex; animation: ticker 60s linear infinite;
+    white-space: nowrap; padding-left: 180px;
+  }
+  .ticker-track span { padding-right: 80px; }
+  .ticker-track span::before { content: '▶ '; }
+  @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  /* STATS SECTION */
+  #stats { background: var(--bg-secondary); }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px; background: var(--border);
+  }
+  .stat-card {
+    background: var(--bg-card); padding: 2.5rem 2rem;
+    text-align: center; position: relative; overflow: hidden;
+    transition: background 0.3s;
+  }
+  .stat-card:hover { background: var(--bg-card-hover); }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .stat-card.green::before { background: var(--accent-green); }
+  .stat-card.red::before { background: var(--accent-red); }
+  .stat-card.blue::before { background: var(--accent-blue); }
+  .stat-card.yellow::before { background: var(--accent-yellow); }
+  .stat-icon { font-size: 2rem; margin-bottom: 1rem; }
+  .stat-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem; font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+  .stat-card.green .stat-number { color: var(--accent-green); }
+  .stat-card.red .stat-number { color: var(--accent-red); }
+  .stat-card.blue .stat-number { color: var(--accent-blue); }
+  .stat-card.yellow .stat-number { color: var(--accent-yellow); }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
+  .stat-change {
+    display: inline-block; margin-top: 0.5rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+  }
+  .stat-change.up { color: var(--accent-red); }
+  .stat-change.down { color: var(--accent-green); }
+
+  /* THREAT CATEGORIES */
+  #threats { background: var(--bg-primary); }
+  .threats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  .threat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    position: relative; overflow: hidden;
+    transition: all 0.4s;
+    cursor: pointer;
+  }
+  .threat-card::before {
+    content: '';
+    position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,229,160,0.03), transparent);
+    transition: left 0.6s;
+  }
+  .threat-card:hover::before { left: 100%; }
+  .threat-card:hover {
+    border-color: var(--border-bright);
+    background: var(--bg-card-hover);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), var(--glow-green);
+  }
+  .threat-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; }
+  .threat-icon {
+    width: 52px; height: 52px;
+    border: 1px solid; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; flex-shrink: 0;
+  }
+  .threat-icon.critical { border-color: var(--accent-red); color: var(--accent-red); background: rgba(255,45,85,0.08); }
+  .threat-icon.high { border-color: var(--accent-orange); color: var(--accent-orange); background: rgba(255,107,53,0.08); }
+  .threat-icon.medium { border-color: var(--accent-yellow); color: var(--accent-yellow); background: rgba(255,215,0,0.08); }
+  .threat-icon.low { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(0,180,255,0.08); }
+  .severity-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
+    padding: 4px 10px; border: 1px solid;
+  }
+  .severity-badge.critical { color: var(--accent-red); border-color: var(--accent-red); }
+  .severity-badge.high { color: var(--accent-orange); border-color: var(--accent-orange); }
+  .severity-badge.medium { color: var(--accent-yellow); border-color: var(--accent-yellow); }
+  .severity-badge.low { color: var(--accent-blue); border-color: var(--accent-blue); }
+  .threat-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+  .threat-desc { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.25rem; }
+  .threat-metrics { display: flex; gap: 1.5rem; margin-bottom: 1.25rem; }
+  .threat-metric { }
+  .threat-metric-label { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; }
+  .threat-metric-value { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: var(--accent-green); }
+  .threat-bar { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-top: 1rem; overflow: hidden; }
+  .threat-bar-fill { height: 100%; border-radius: 2px; transition: width 1.5s ease; }
+  .threat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1rem; }
+  .threat-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; padding: 3px 8px;
+    background: rgba(0,180,255,0.1); color: var(--accent-blue);
+    border: 1px solid rgba(0,180,255,0.2);
+  }
+  .threat-card-expand { display: none; padding-top: 1rem; border-top: 1px solid var(--border); margin-top: 1rem; }
+  .threat-card.expanded .threat-card-expand { display: block; }
+  .expand-btn {
+    background: none; border: none; color: var(--accent-green);
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+    cursor: pointer; letter-spacing: 2px; margin-top: 1rem;
+    display: flex; align-items: center; gap: 6px;
+    transition: color 0.2s;
+  }
+  .expand-btn:hover { color: #fff; }
+  .expand-arrow { transition: transform 0.3s; }
+  .threat-card.expanded .expand-arrow { transform: rotate(180deg); }
+
+  /* ATTACK MATRIX */
+  #matrix { background: var(--bg-secondary); }
+  .matrix-container { overflow-x: auto; }
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 140px repeat(11, 1fr);
+    gap: 3px; min-width: 900px;
+  }
+  .matrix-header {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem; color: var(--accent-green);
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 6px; text-align: center;
+    background: rgba(0,229,160,0.06);
+    border: 1px solid rgba(0,229,160,0.1);
+  }
+  .matrix-row-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem; color: var(--text-secondary);
+    padding: 6px 8px; background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    display: flex; align-items: center;
+  }
+  .matrix-cell {
+    height: 32px; border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s;
+    position: relative;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    display: flex; align-items: center; justify-content: center;
+    color: transparent;
+  }
+  .matrix-cell:hover { transform: scale(1.1); z-index: 2; }
+  .matrix-cell.lvl0 { background: rgba(255,255,255,0.02); }
+  .matrix-cell.lvl1 { background: rgba(0,180,255,0.15); color: var(--accent-blue); border-color: rgba(0,180,255,0.3); }
+  .matrix-cell.lvl2 { background: rgba(255,215,0,0.15); color: var(--accent-yellow); border-color: rgba(255,215,0,0.3); }
+  .matrix-cell.lvl3 { background: rgba(255,107,53,0.15); color: var(--accent-orange); border-color: rgba(255,107,53,0.3); }
+  .matrix-cell.lvl4 { background: rgba(255,45,85,0.2); color: var(--accent-red); border-color: rgba(255,45,85,0.4); }
+  .matrix-cell:hover { color: var(--text-primary); }
+  .matrix-legend {
+    display: flex; gap: 1.5rem; justify-content: center; margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-secondary); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* RESPONSE STRATEGIES */
+  #response { background: var(--bg-primary); }
+  .response-tabs {
+    display: flex; gap: 4px; margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto; padding-bottom: 0;
+  }
+  .tab-btn {
+    padding: 12px 24px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600; font-size: 0.85rem; letter-spacing: 1.5px;
+    text-transform: uppercase; background: none;
+    color: var(--text-muted); border: none; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s; white-space: nowrap;
+    position: relative; top: 1px;
+  }
+  .tab-btn.active {
+    color: var(--accent-green);
+    border-bottom-color: var(--accent-green);
+  }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-content { display: none; }
+  .tab-content.active { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+  @media(max-width: 768px) { .tab-content.active { grid-template-columns: 1fr; } }
+  .response-steps { display: flex; flex-direction: column; gap: 1rem; }
+  .response-step {
+    display: flex; gap: 1rem;
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 1.25rem; position: relative; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .response-step:hover { border-color: var(--accent-green); }
+  .step-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem; font-weight: 700; color: var(--accent-green);
+    opacity: 0.3; min-width: 40px; line-height: 1;
+  }
+  .step-content { }
+  .step-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.3rem; }
+  .step-desc { color: var(--text-secondary); font-size: 0.85rem; }
+  .step-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; color: var(--accent-yellow);
+    margin-top: 0.4rem;
+  }
+  .response-info-panel {
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 2rem;
+  }
+  .info-panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem; color: var(--accent-green);
+    margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .info-terminal {
+    background: #040810;
+    padding: 1.25rem; border: 1px solid rgba(0,229,160,0.1);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem; line-height: 1.8;
+    color: var(--accent-green);
+  }
+  .info-terminal .cmd { color: var(--accent-blue); }
+  .info-terminal .comment { color: var(--text-muted); }
+  .info-terminal .output { color: var(--text-secondary); }
+  .info-terminal .error { color: var(--accent-red); }
+  .cursor-blink {
+    display: inline-block; width: 8px; height: 14px;
+    background: var(--accent-green); vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .checklist { list-style: none; }
+  .checklist li {
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.9rem; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .checklist li::before { content: '✓'; color: var(--accent-green); font-family: 'Share Tech Mono', monospace; }
+
+  /* INCIDENT TIMELINE */
+  #lifecycle { background: var(--bg-secondary); }
+  .lifecycle-wrapper {
+    display: flex; justify-content: center; align-items: center;
+    flex-wrap: wrap; gap: 0; position: relative; padding: 3rem 0;
+  }
+  .lifecycle-connector { width: 60px; height: 2px; background: var(--border-bright); }
+  .lifecycle-node {
+    text-align: center; padding: 0 1rem;
+    animation: none;
+    position: relative;
+  }
+  .lifecycle-circle {
+    width: 90px; height: 90px; border-radius: 50%;
+    border: 2px solid;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    margin: 0 auto 1rem;
+    transition: all 0.4s; cursor: pointer;
+    position: relative;
+  }
+  .lifecycle-circle::before {
+    content: ''; position: absolute; inset: -6px; border-radius: 50%;
+    border: 1px dashed; opacity: 0.3;
+    animation: rotateDash 8s linear infinite;
+  }
+  @keyframes rotateDash { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+  .lifecycle-circle:hover { transform: scale(1.1); }
+  .lifecycle-circle.identify { border-color: var(--accent-blue); color: var(--accent-blue); }
+  .lifecycle-circle.identify::before { border-color: var(--accent-blue); }
+  .lifecycle-circle.protect { border-color: var(--accent-green); color: var(--accent-green); }
+  .lifecycle-circle.protect::before { border-color: var(--accent-green); }
+  .lifecycle-circle.detect { border-color: var(--accent-yellow); color: var(--accent-yellow); }
+  .lifecycle-circle.detect::before { border-color: var(--accent-yellow); }
+  .lifecycle-circle.respond { border-color: var(--accent-orange); color: var(--accent-orange); }
+  .lifecycle-circle.respond::before { border-color: var(--accent-orange); }
+  .lifecycle-circle.recover { border-color: var(--accent-red); color: var(--accent-red); }
+  .lifecycle-circle.recover::before { border-color: var(--accent-red); }
+  .lifecycle-icon { font-size: 1.6rem; }
+  .lifecycle-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem; letter-spacing: 1px;
+    font-weight: 700; color: var(--text-primary);
+  }
+  .lifecycle-detail {
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 2rem; margin-top: 2rem;
+    display: none;
+  }
+  .lifecycle-detail.active { display: block; animation: fadeInUp 0.4s ease; }
+  .lifecycle-detail-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem; margin-bottom: 1rem; color: var(--accent-green);
+  }
+  .lifecycle-items {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;
+  }
+  .lifecycle-item {
+    padding: 1rem; background: rgba(0,229,160,0.04);
+    border: 1px solid rgba(0,229,160,0.1);
+  }
+  .lifecycle-item-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .lifecycle-item-desc { font-size: 0.8rem; color: var(--text-secondary); }
+
+  /* FRAMEWORKS */
+  #frameworks { background: var(--bg-primary); }
+  .frameworks-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;
+  }
+  .framework-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 2rem; transition: all 0.3s;
+    position: relative;
+  }
+  .framework-card:hover { border-color: var(--border-bright); transform: translateY(-3px); }
+  .framework-card-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem; font-weight: 900;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .framework-card-logo .mitre { color: var(--accent-red); }
+  .framework-card-logo .nist { color: var(--accent-blue); }
+  .framework-card-logo .iso { color: var(--accent-yellow); }
+  .framework-card-logo .cis { color: var(--accent-green); }
+  .framework-card-title { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+  .framework-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.25rem; }
+  .framework-pillars { display: flex; flex-wrap: wrap; gap: 6px; }
+  .framework-pillar {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem; padding: 4px 10px;
+    border: 1px solid var(--border); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    transition: all 0.2s; cursor: default;
+  }
+  .framework-pillar:hover { border-color: var(--accent-green); color: var(--accent-green); }
+  .framework-adoption {
+    margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border);
+  }
+  .adoption-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+  .adoption-bar { height: 4px; background: rgba(255,255,255,0.05); }
+  .adoption-fill { height: 100%; background: var(--accent-green); transition: width 2s ease; }
+
+  /* TOOLS */
+  #tools { background: var(--bg-secondary); }
+  .tools-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;
+  }
+  .tool-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 1.5rem; transition: all 0.3s; text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+  .tool-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+  .tool-header { display: flex; align-items: center; gap: 10px; }
+  .tool-icon {
+    width: 36px; height: 36px; background: rgba(0,180,255,0.1);
+    border: 1px solid rgba(0,180,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .tool-name { font-weight: 700; font-size: 0.95rem; }
+  .tool-category {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem; color: var(--accent-blue);
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  .tool-desc { font-size: 0.8rem; color: var(--text-secondary); flex: 1; }
+  .tool-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem; padding: 2px 8px;
+    border: 1px solid; align-self: flex-start;
+  }
+  .tool-badge.open { color: var(--accent-green); border-color: var(--accent-green); }
+  .tool-badge.commercial { color: var(--accent-yellow); border-color: var(--accent-yellow); }
+
+  /* THREAT INTELLIGENCE FEED */
+  #intel { background: var(--bg-primary); }
+  .intel-layout { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
+  @media(max-width: 900px) { .intel-layout { grid-template-columns: 1fr; } }
+  .intel-feed {
+    background: var(--bg-card); border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .intel-feed-header {
+    padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(0,229,160,0.03);
+  }
+  .intel-feed-title {
+    font-family: 'Orbitron', monospace; font-size: 0.85rem; color: var(--accent-green);
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; color: var(--accent-red);
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-red); animation: pulse 1s infinite; }
+  .feed-items { max-height: 520px; overflow-y: auto; }
+  .feed-item {
+    padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.2s;
+    display: flex; gap: 1rem;
+  }
+  .feed-item:hover { background: rgba(255,255,255,0.02); }
+  .feed-item-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; color: var(--text-muted);
+    min-width: 60px; padding-top: 2px;
+  }
+  .feed-item-content { flex: 1; }
+  .feed-item-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 3px; }
+  .feed-item-desc { font-size: 0.8rem; color: var(--text-secondary); }
+  .feed-item-severity {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem; padding: 2px 6px; border: 1px solid; align-self: flex-start;
+    text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+  }
+  .intel-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+  .intel-widget {
+    background: var(--bg-card); border: 1px solid var(--border); padding: 1.5rem;
+  }
+  .intel-widget-title {
+    font-family: 'Orbitron', monospace; font-size: 0.75rem;
+    color: var(--accent-green); margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .geo-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .geo-item { }
+  .geo-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .geo-country { font-size: 0.85rem; font-weight: 600; }
+  .geo-count { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--accent-red); }
+  .geo-bar { height: 3px; background: rgba(255,255,255,0.05); }
+  .geo-fill { height: 100%; background: linear-gradient(90deg, var(--accent-red), var(--accent-orange)); transition: width 2s ease; }
+  .threat-chart-canvas { width: 100%; height: 120px; }
+  .ioc-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .ioc-item {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+    color: var(--text-secondary); padding: 6px 10px;
+    background: rgba(255,45,85,0.05);
+    border: 1px solid rgba(255,45,85,0.15);
+    word-break: break-all;
+    transition: all 0.2s; cursor: pointer;
+  }
+  .ioc-item:hover { color: var(--accent-red); border-color: var(--accent-red); }
+  .ioc-item span { color: var(--accent-red); }
+
+  /* RESOURCES */
+  #resources { background: var(--bg-secondary); }
+  .resources-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+  .resource-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 1.75rem; text-decoration: none; color: inherit;
+    transition: all 0.3s; display: flex; flex-direction: column; gap: 1rem;
+  }
+  .resource-card:hover { border-color: var(--border-bright); transform: translateY(-3px); box-shadow: var(--glow-green); }
+  .resource-type {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--accent-green);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .resource-type::before { content: '//'; opacity: 0.5; }
+  .resource-title { font-family: 'Orbitron', monospace; font-size: 0.9rem; font-weight: 700; line-height: 1.4; }
+  .resource-desc { font-size: 0.85rem; color: var(--text-secondary); flex: 1; }
+  .resource-link {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+    color: var(--accent-blue); display: flex; align-items: center; gap: 6px;
+  }
+  .resource-link::after { content: '→'; }
+
+  /* FOOTER */
+  footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    padding: 3rem 0;
+  }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; }
+  @media(max-width: 768px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  .footer-brand { }
+  .footer-logo {
+    font-family: 'Orbitron', monospace; font-weight: 900;
+    color: var(--accent-green); font-size: 1.1rem;
+    margin-bottom: 1rem; display: block;
+  }
+  .footer-tagline { font-size: 0.85rem; color: var(--text-muted); max-width: 280px; line-height: 1.7; }
+  .footer-col-title {
+    font-family: 'Orbitron', monospace; font-size: 0.65rem;
+    color: var(--accent-green); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+  .footer-links a { font-size: 0.85rem; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--text-primary); }
+  .footer-bottom {
+    margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-copy {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem; color: var(--text-muted);
+  }
+  .footer-shields { display: flex; gap: 1rem; }
+  .shield-badge {
+    font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+    padding: 4px 12px; border: 1px solid var(--border);
+    color: var(--text-muted); letter-spacing: 1px;
+  }
+
+  /* REVEAL ANIMATION */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* MOBILE NAV */
+  @media(max-width: 900px) {
+    .nav-links { display: none; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: rgba(6,11,20,0.98); padding: 1rem 2rem 2rem; gap: 1.2rem; border-bottom: 1px solid var(--border); }
+    .nav-links.open { display: flex; }
+    .hamburger { display: flex; }
+    .nav-status { display: none; }
+    .hero-stats { gap: 2rem; }
+    .matrix-grid { min-width: 800px; }
+  }
+
+  /* GLITCH EFFECT */
+  .glitch {
+    position: relative;
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute; top: 0; left: 0; right: 0;
+    background: transparent;
+  }
+  .glitch::before {
+    color: var(--accent-red); clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+    transform: translateX(-2px);
+    animation: glitch1 4s infinite;
+  }
+  .glitch::after {
+    color: var(--accent-blue); clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+    transform: translateX(2px);
+    animation: glitch2 4s infinite;
+  }
+  @keyframes glitch1 { 0%,90%,100%{opacity:0} 92%,96%{opacity:1} 94%{transform:translateX(-4px)} }
+  @keyframes glitch2 { 0%,88%,100%{opacity:0} 90%,94%{opacity:1} 92%{transform:translateX(4px)} }
+
+  /* TOOLTIP */
+  .tooltip-container { position: relative; display: inline-block; }
+  .tooltip {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card); border: 1px solid var(--accent-green);
+    padding: 8px 12px; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem; color: var(--text-primary);
+    white-space: nowrap; z-index: 100;
+  }
+  .tooltip-container:hover .tooltip { display: block; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#hero" class="nav-logo">
+    <div class="logo-pulse"></div>
+    <span class="bracket">[</span>CYBERSHIELD<span class="bracket">]</span>
+  </a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#threats">Threats</a></li>
+    <li><a href="#matrix">ATT&CK Matrix</a></li>
+    <li><a href="#response">Response</a></li>
+    <li><a href="#lifecycle">Lifecycle</a></li>
+    <li><a href="#intel">Intel Feed</a></li>
+    <li><a href="#frameworks">Frameworks</a></li>
+    <li><a href="#tools">Tools</a></li>
+    <li><a href="#resources">Resources</a></li>
+  </ul>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    THREAT LEVEL: <span style="color:var(--accent-red);margin-left:4px;">ELEVATED</span>
+  </div>
+  <div class="hamburger" onclick="toggleNav()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="matrix-canvas"></canvas>
+  <canvas id="network-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-tag">// ADVANCED THREAT INTELLIGENCE PLATFORM</div>
+    <h1 class="hero-title">
+      <div class="line1 glitch" data-text="CYBER THREAT">CYBER THREAT</div>
+      <div class="line2">ANALYSIS HUB</div>
+    </h1>
+    <p class="hero-subtitle">Real-time threat intelligence, attack vector mapping, and comprehensive response strategies for enterprise security operations.</p>
+    <div class="hero-cta">
+      <a href="#threats" class="btn btn-primary">Analyze Threats</a>
+      <a href="#response" class="btn btn-outline">Response Playbooks</a>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num" data-count="2847">0</div>
+      <div class="hero-stat-label">Active Threats</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num" data-count="156">0</div>
+      <div class="hero-stat-label">Countries Monitored</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num" data-count="99">0</div>
+      <div class="hero-stat-label">Detection Rate %</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num" data-count="24">0</div>
+      <div class="hero-stat-label">Hrs Avg Response</div>
+    </div>
+  </div>
+  <div class="scroll-indicator">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="threat-ticker">
+  <div class="ticker-label">LIVE THREATS</div>
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="container">
+    <div class="stats-grid reveal">
+      <div class="stat-card red">
+        <div class="stat-icon">🛡️</div>
+        <div class="stat-number counter" data-target="4.45">0</div>
+        <div class="stat-label">Trillion USD — 2023 Global Cybercrime Cost</div>
+        <div class="stat-change up">▲ 15% YoY</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">🔍</div>
+        <div class="stat-number counter" data-target="277">0</div>
+        <div class="stat-label">Days — Avg. Breach Detection Time</div>
+        <div class="stat-change up">▲ 3 days from prior year</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-number counter" data-target="560">0</div>
+        <div class="stat-label">Ransomware Attacks Daily (Global)</div>
+        <div class="stat-change up">▲ 73% increase</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-icon">🌐</div>
+        <div class="stat-number counter" data-target="3.5">0</div>
+        <div class="stat-label">Million — Unfilled Cybersecurity Jobs</div>
+        <div class="stat-change up">▲ Workforce gap growing</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THREAT CATEGORIES -->
+<section id="threats">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// threat-taxonomy</div>
+      <h2 class="section-title">Threat <span>Classification</span> Matrix</h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Comprehensive taxonomy of modern cyber threats, attack vectors, and adversarial techniques mapped to real-world incident data.</p>
+    </div>
+    <div class="threats-grid" id="threatsGrid"></div>
+  </div>
+</section>
+
+<!-- MITRE ATTACK MATRIX -->
+<section id="matrix">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// mitre-att&ck-framework</div>
+      <h2 class="section-title">ATT&CK <span>Tactic Matrix</span></h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Interactive visualization of adversary tactics and techniques based on the MITRE ATT&CK framework. Hover cells to view technique details.</p>
+    </div>
+    <div class="matrix-container">
+      <div class="matrix-grid" id="attackMatrix"></div>
+    </div>
+    <div class="matrix-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,0.1)"></div>No Activity</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(0,180,255,0.4)"></div>Low Frequency</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,215,0,0.4)"></div>Moderate</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,107,53,0.4)"></div>High Activity</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,45,85,0.5)"></div>Critical</div>
+    </div>
+    <div id="matrixTooltip" style="display:none;background:var(--bg-card);border:1px solid var(--accent-green);padding:12px 16px;font-family:'Share Tech Mono',monospace;font-size:0.7rem;color:var(--text-primary);position:fixed;z-index:500;pointer-events:none;max-width:250px;line-height:1.6;"></div>
+  </div>
+</section>
+
+<!-- RESPONSE STRATEGIES -->
+<section id="response">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// incident-response-playbooks</div>
+      <h2 class="section-title">Response <span>Strategy</span> Playbooks</h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Structured, step-by-step response playbooks for each threat category with timelines and terminal command references.</p>
+    </div>
+    <div class="response-tabs" id="responseTabs"></div>
+    <div id="responseContent"></div>
+  </div>
+</section>
+
+<!-- INCIDENT LIFECYCLE -->
+<section id="lifecycle">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// nist-cybersecurity-framework</div>
+      <h2 class="section-title">Incident Response <span>Lifecycle</span></h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Click each phase to explore detailed activities, responsibilities, and success metrics based on the NIST Cybersecurity Framework.</p>
+    </div>
+    <div class="lifecycle-wrapper" id="lifecycleWrapper"></div>
+    <div id="lifecycleDetail" class="lifecycle-detail"></div>
+  </div>
+</section>
+
+<!-- THREAT INTEL FEED -->
+<section id="intel">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// live-threat-intelligence</div>
+      <h2 class="section-title">Threat <span>Intelligence</span> Feed</h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Simulated real-time threat intelligence aggregated from global honeypots, OSINT sources, and dark web monitoring.</p>
+    </div>
+    <div class="intel-layout">
+      <div class="intel-feed reveal">
+        <div class="intel-feed-header">
+          <div class="intel-feed-title">// GLOBAL THREAT FEED</div>
+          <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        </div>
+        <div class="feed-items" id="feedItems"></div>
+      </div>
+      <div class="intel-sidebar">
+        <div class="intel-widget reveal reveal-delay-1">
+          <div class="intel-widget-title">📍 TOP ATTACK ORIGINS</div>
+          <div class="geo-list" id="geoList"></div>
+        </div>
+        <div class="intel-widget reveal reveal-delay-2">
+          <div class="intel-widget-title">🔴 INDICATORS OF COMPROMISE</div>
+          <div class="ioc-list" id="iocList"></div>
+        </div>
+        <div class="intel-widget reveal reveal-delay-3">
+          <div class="intel-widget-title">📊 ATTACK DISTRIBUTION</div>
+          <canvas id="miniChart" class="threat-chart-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FRAMEWORKS -->
+<section id="frameworks">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// security-frameworks</div>
+      <h2 class="section-title">Security <span>Frameworks</span> & Standards</h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Industry-standard frameworks for building resilient cybersecurity programs. Hover to explore key controls and pillars.</p>
+    </div>
+    <div class="frameworks-grid" id="frameworksGrid"></div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section id="tools">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// security-tooling</div>
+      <h2 class="section-title">Security <span>Tools</span> Arsenal</h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Curated collection of open-source and commercial tools used by security professionals for threat detection, analysis, and response.</p>
+    </div>
+    <div class="tools-grid" id="toolsGrid"></div>
+  </div>
+</section>
+
+<!-- RESOURCES -->
+<section id="resources">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">// knowledge-base</div>
+      <h2 class="section-title">Security <span>Resources</span> & References</h2>
+      <div class="section-line"></div>
+      <p class="section-desc">Essential reading, certifications, databases, and external resources for cybersecurity professionals.</p>
+    </div>
+    <div class="resources-grid" id="resourcesGrid"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="footer-logo">[CYBERSHIELD]</span>
+        <p class="footer-tagline">Advanced cyber threat intelligence platform. Built for security operations teams who need actionable intelligence, fast.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Threat Types</div>
+        <ul class="footer-links">
+          <li><a href="#threats">Ransomware</a></li>
+          <li><a href="#threats">APT Groups</a></li>
+          <li><a href="#threats">Zero-Day Exploits</a></li>
+          <li><a href="#threats">Phishing / BEC</a></li>
+          <li><a href="#threats">DDoS Attacks</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Frameworks</div>
+        <ul class="footer-links">
+          <li><a href="#frameworks">MITRE ATT&CK</a></li>
+          <li><a href="#frameworks">NIST CSF</a></li>
+          <li><a href="#frameworks">ISO 27001</a></li>
+          <li><a href="#frameworks">CIS Controls</a></li>
+          <li><a href="#frameworks">OWASP Top 10</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Resources</div>
+        <ul class="footer-links">
+          <li><a href="#response">IR Playbooks</a></li>
+          <li><a href="#tools">Security Tools</a></li>
+          <li><a href="#intel">Threat Intel</a></li>
+          <li><a href="#lifecycle">NIST Lifecycle</a></li>
+          <li><a href="#resources">References</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 CYBERSHIELD INTELLIGENCE PLATFORM // ALL SYSTEMS OPERATIONAL</div>
+      <div class="footer-shields">
+        <div class="shield-badge">TLS 1.3 ENCRYPTED</div>
+        <div class="shield-badge">SOC 2 COMPLIANT</div>
+        <div class="shield-badge">ISO 27001</div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ===== DATA =====
+const THREATS = [
+  {
+    name: "RANSOMWARE",
+    icon: "🔐",
+    severity: "critical",
+    desc: "Malicious software encrypting victim data and demanding cryptocurrency ransom. Modern variants exfiltrate data before encryption (double extortion).",
+    prevalence: "34%",
+    avgCost: "$4.54M",
+    detection: "72h avg",
+    riskPct: 95,
+    tags: ["encryption","exfiltration","c2-comms","lateral-movement"],
+    details: `<ul class="checklist"><li>Backup systems with offline copies</li><li>Network segmentation to limit blast radius</li><li>EDR with behavioral detection</li><li>Zero-trust architecture</li><li>Regular tabletop exercises</li></ul>`
+  },
+  {
+    name: "APT INTRUSION",
+    icon: "🎯",
+    severity: "critical",
+    desc: "Nation-state and sophisticated threat actors conducting long-term espionage campaigns using custom tooling and living-off-the-land techniques.",
+    prevalence: "18%",
+    avgCost: "$9.2M",
+    detection: "287d avg",
+    riskPct: 88,
+    tags: ["espionage","persistence","lolbas","c2","exfiltration"],
+    details: `<ul class="checklist"><li>Threat hunting programs</li><li>Privileged access workstations</li><li>Enhanced logging (SIEM)</li><li>Deception technology (honeypots)</li><li>Supply chain verification</li></ul>`
+  },
+  {
+    name: "PHISHING / BEC",
+    icon: "🎣",
+    severity: "high",
+    desc: "Social engineering attacks via email, SMS, or voice. Business Email Compromise (BEC) targets financial transfers costing organizations billions annually.",
+    prevalence: "41%",
+    avgCost: "$2.1M",
+    detection: "3d avg",
+    riskPct: 78,
+    tags: ["social-engineering","credential-theft","impersonation","bec"],
+    details: `<ul class="checklist"><li>DMARC/DKIM/SPF email authentication</li><li>Security awareness training</li><li>MFA on all accounts</li><li>Anti-phishing gateways</li><li>Verify wire transfer requests out-of-band</li></ul>`
+  },
+  {
+    name: "ZERO-DAY EXPLOIT",
+    icon: "💣",
+    severity: "critical",
+    desc: "Attacks exploiting previously unknown vulnerabilities before vendor patches exist. Often used by APT groups and traded on dark web exploit markets.",
+    prevalence: "12%",
+    avgCost: "$7.3M",
+    detection: "N/A",
+    riskPct: 92,
+    tags: ["cve","exploit-kit","memory-corruption","privilege-escalation"],
+    details: `<ul class="checklist"><li>Virtual patching via WAF/IPS</li><li>Exploit mitigation features (DEP/ASLR)</li><li>Application whitelisting</li><li>Threat intelligence subscriptions</li><li>Vendor bug bounty monitoring</li></ul>`
+  },
+  {
+    name: "DDoS ATTACK",
+    icon: "🌊",
+    severity: "high",
+    desc: "Volumetric, protocol, or application-layer attacks overwhelming infrastructure. Modern attacks use botnets and amplification for terabit-scale traffic.",
+    prevalence: "28%",
+    avgCost: "$1.4M",
+    detection: "Minutes",
+    riskPct: 65,
+    tags: ["volumetric","syn-flood","amplification","botnet","layer7"],
+    details: `<ul class="checklist"><li>DDoS mitigation provider (CDN)</li><li>Anycast network diffusion</li><li>Rate limiting rules</li><li>BGP blackhole routing</li><li>Capacity planning</li></ul>`
+  },
+  {
+    name: "INSIDER THREAT",
+    icon: "👤",
+    severity: "high",
+    desc: "Malicious or negligent insiders abusing legitimate access. Includes data theft by departing employees, credential misuse, and sabotage.",
+    prevalence: "22%",
+    avgCost: "$6.6M",
+    detection: "77d avg",
+    riskPct: 72,
+    tags: ["data-theft","privilege-abuse","ueba","dlp"],
+    details: `<ul class="checklist"><li>User & Entity Behavior Analytics (UEBA)</li><li>Data Loss Prevention (DLP)</li><li>Least-privilege access controls</li><li>Offboarding procedures</li><li>Psychological safety programs</li></ul>`
+  },
+  {
+    name: "SUPPLY CHAIN",
+    icon: "⛓️",
+    severity: "critical",
+    desc: "Compromising trusted software or hardware suppliers to poison updates and gain access to downstream organizations (SolarWinds, XZ Utils).",
+    prevalence: "9%",
+    avgCost: "$12.1M",
+    detection: "6mo avg",
+    riskPct: 85,
+    tags: ["software-integrity","build-pipeline","dependency","sbom"],
+    details: `<ul class="checklist"><li>Software Bill of Materials (SBOM)</li><li>Code signing verification</li><li>Vendor security assessments</li><li>Isolated build environments</li><li>Runtime application self-protection</li></ul>`
+  },
+  {
+    name: "CLOUD MISCONFIG",
+    icon: "☁️",
+    severity: "medium",
+    desc: "Exposed S3 buckets, unrestricted security groups, and misconfigured IAM policies leading to mass data exposure without any exploitation needed.",
+    prevalence: "37%",
+    avgCost: "$3.2M",
+    detection: "Hours",
+    riskPct: 58,
+    tags: ["cspm","iam","s3","api-keys","public-exposure"],
+    details: `<ul class="checklist"><li>Cloud Security Posture Management</li><li>Infrastructure as Code scanning</li><li>Automated compliance checks</li><li>Secret scanning in CI/CD</li><li>Regular cloud configuration audits</li></ul>`
+  }
+];
+
+const TACTICS = ["Reconn","Weaponize","Deliver","Exploit","Install","C2","Exfil","Impact","Persist","Escalate","Evade"];
+const TECHNIQUES = [
+  ["OSINT","Spearphishing","Email","Buffer Overflow","Backdoor","HTTP C2","Data Compress","Wiper","Registry Run","SUID Bit","Obfuscation"],
+  ["Port Scan","Malware Kit","Drive-by","Code Inject","Rootkit","DNS Tunnel","Cloud Storage","Ransomware","Scheduled Task","Token Hijack","Timestomp"],
+  ["Shodan","Supply Chain","USB Drop","DLL Hijack","Web Shell","ICMP Tunnel","USB Exfil","Disk Wipe","WMI Subscribe","Sudo Exploit","LOLBAS"],
+  ["LinkedIn","Watering Hole","Social Eng","Exploit Kit","Bootkit","P2P C2","Network Exfil","Service Stop","Logon Script","Kernel Exploit","Clearlog"],
+  ["Shodan","Email Attach","Vishing","Heap Spray","Browser Ext","Domain Front","Staged Exfil","Account Lock","COM Hijack","Bypass UAC","Masquerade"],
+  ["GitScrape","Compromised","Macro","ROP Chain","Cronjob","Slack C2","Email Exfil","BEC Fraud","Path Intercept","Impersonation","Packing"],
+  ["DNS Brute","Trojan","Removable","Format String","Startup Fold","Cobalt Strike","FTP Exfil","Endpoint Wipe","Boot Sector","Cred Dump","Sig Spoof"],
+];
+
+const RESPONSE_PLAYBOOKS = [
+  {
+    id: "ransomware",
+    label: "Ransomware",
+    steps: [
+      { n:"01", title:"Isolate & Contain", desc:"Immediately disconnect infected systems from network. Enable out-of-band management.", time:"T+0:05" },
+      { n:"02", title:"Preserve Evidence", desc:"Snapshot memory and disk images. Document all indicators before remediation.", time:"T+0:30" },
+      { n:"03", title:"Identify Patient Zero", desc:"Trace infection vector. Identify phishing email, RDP exposure, or vulnerable service.", time:"T+2:00" },
+      { n:"04", title:"Assess Blast Radius", desc:"Enumerate encrypted systems, shared drives, backups. Determine data exfiltration scope.", time:"T+4:00" },
+      { n:"05", title:"Recovery Decision", desc:"Evaluate: restore from backup vs negotiate. Never pay without legal/insurance consultation.", time:"T+8:00" },
+      { n:"06", title:"Restore & Harden", desc:"Restore from clean backups. Patch vulnerability. Reset all credentials. Deploy EDR.", time:"T+24:00" }
+    ],
+    terminal: `<span class="comment"># Ransomware IR Terminal Commands</span>
+<span class="cmd">$ isolate_host.sh</span> <span class="output">--target 192.168.1.45 --vlan quarantine</span>
+<span class="output">→ VLAN changed: HOST ISOLATED</span>
+<span class="cmd">$ collect_volatility.sh</span> <span class="output">--mem-dump --pid-list --network-connections</span>
+<span class="output">→ Memory image: evidence/mem_dump_$(date).raw</span>
+<span class="cmd">$ find_patient_zero.py</span> <span class="output">--email-logs --dns-logs --auth-logs</span>
+<span class="output">→ Phishing email detected: 2025-05-20 14:32 UTC</span>
+<span class="error">→ IOC: evil-domain[.]ru — BLOCKED</span>
+<span class="cmd">$ restore_from_backup.sh</span> <span class="output">--verify-hash --offline-copy</span>
+<span class="output">→ Backup integrity: VERIFIED ✓</span>
+<span class="output">→ Restoring 847 GB...</span><span class="cursor-blink"></span>`
+  },
+  {
+    id: "apt",
+    label: "APT Hunt",
+    steps: [
+      { n:"01", title:"Hunt Hypothesis", desc:"Develop threat model based on sector, geopolitics, and recent threat actor TTPs.", time:"T+0:00" },
+      { n:"02", title:"Log Collection", desc:"Aggregate endpoint, network, cloud, and identity logs into SIEM. Minimum 90-day retention.", time:"T+1:00" },
+      { n:"03", title:"IOC Search", desc:"Search for known bad IPs, domains, hashes, and YARA rules from threat intel feeds.", time:"T+2:00" },
+      { n:"04", title:"Behavioral Analysis", desc:"Hunt for anomalous behaviors: unusual process chains, lateral movement, privilege changes.", time:"T+6:00" },
+      { n:"05", title:"Scope & Dwell Time", desc:"Map full compromise scope. Determine how long adversary has been present.", time:"T+12:00" },
+      { n:"06", title:"Evict & Monitor", desc:"Simultaneously evict all footholds. Monitor for re-entry attempts for 90 days.", time:"T+48:00" }
+    ],
+    terminal: `<span class="comment"># APT Threat Hunt Commands</span>
+<span class="cmd">$ sigma-search</span> <span class="output">--ruleset apt29 --logs /var/log/siem --days 90</span>
+<span class="output">→ Processing 2.4TB logs...</span>
+<span class="error">→ 3 HITS: Lateral movement via wmiexec</span>
+<span class="cmd">$ yara-scan</span> <span class="output">-r /rules/apt/ --target endpoint-snapshots/</span>
+<span class="output">→ MATCH: Cozy Bear loader — host: WKSTN-004</span>
+<span class="cmd">$ timeline.py</span> <span class="output">--dwell-time-analysis --first-hop WKSTN-004</span>
+<span class="output">→ Dwell time: 127 days</span>
+<span class="output">→ Lateral hops: 6 systems</span>
+<span class="cmd">$ evict.sh</span> <span class="output">--simultaneous --all-hosts --reset-creds</span>
+<span class="output">→ Eviction complete: 2025-05-21 08:00 UTC</span><span class="cursor-blink"></span>`
+  },
+  {
+    id: "phishing",
+    label: "Phishing / BEC",
+    steps: [
+      { n:"01", title:"Triage Email", desc:"Pull email headers, URLs, and attachments. Submit to sandbox. Preserve original headers.", time:"T+0:15" },
+      { n:"02", title:"Identify Recipients", desc:"Determine full recipient list. Check if any user clicked links or entered credentials.", time:"T+0:30" },
+      { n:"03", title:"Block & Quarantine", desc:"Block sender domain/IP, quarantine similar emails org-wide. Update gateway rules.", time:"T+1:00" },
+      { n:"04", title:"Credential Reset", desc:"Force password reset for all compromised or at-risk accounts. Enable MFA immediately.", time:"T+2:00" },
+      { n:"05", title:"Hunt for Tokens", desc:"Check for OAuth token abuse, mail forwarding rules, and new inbox delegates.", time:"T+3:00" },
+      { n:"06", title:"Awareness Comms", desc:"Send targeted communication to all affected users. Update training programs.", time:"T+24:00" }
+    ],
+    terminal: `<span class="comment"># Phishing IR Commands</span>
+<span class="cmd">$ phish-triage.py</span> <span class="output">--email-id MSG20250521-4471 --sandbox</span>
+<span class="output">→ URL detonated: credential-harvester detected</span>
+<span class="error">→ Domain: paypa1-secure[.]com — MALICIOUS</span>
+<span class="cmd">$ m365-audit.py</span> <span class="output">--check-forwarding --check-delegates --check-oauth</span>
+<span class="error">→ Forwarding rule found: jsmith@corp.com → attacker@gmail.com</span>
+<span class="cmd">$ remove-mailrules.ps1</span> <span class="output">-Mailbox jsmith@corp.com -All</span>
+<span class="output">→ 2 malicious rules removed ✓</span>
+<span class="cmd">$ force-mfa-reset.ps1</span> <span class="output">--user jsmith --revoke-sessions</span>
+<span class="output">→ All sessions revoked. MFA re-enrollment required.</span><span class="cursor-blink"></span>`
+  },
+  {
+    id: "ddos",
+    label: "DDoS",
+    steps: [
+      { n:"01", title:"Detect & Classify", desc:"Identify attack type: volumetric, protocol (SYN flood), or application (HTTP flood).", time:"T+0:05" },
+      { n:"02", title:"Activate Scrubbing", desc:"Route traffic through DDoS mitigation provider. Enable BGP blackhole for affected IPs.", time:"T+0:15" },
+      { n:"03", title:"Rate Limiting", desc:"Deploy emergency rate limits and geo-blocking for attack source regions.", time:"T+0:30" },
+      { n:"04", title:"Scale & Absorb", desc:"Auto-scale infrastructure. Enable CDN caching. Offload origin servers.", time:"T+1:00" },
+      { n:"05", title:"Attacker Attribution", desc:"Analyze attack signatures, botnet patterns, and demand messages for attribution.", time:"T+4:00" },
+      { n:"06", title:"Post-Attack Review", desc:"Document attack volume, impact, and remediation. Update runbooks.", time:"T+48:00" }
+    ],
+    terminal: `<span class="comment"># DDoS Mitigation Commands</span>
+<span class="cmd">$ detect-ddos.sh</span> <span class="output">--interface eth0 --threshold 1Gbps</span>
+<span class="error">→ ALERT: 48Gbps SYN flood detected on 203.0.113.10</span>
+<span class="cmd">$ bgp-blackhole.sh</span> <span class="output">--peer upstream-router --prefix 203.0.113.10/32</span>
+<span class="output">→ BGP null-route active: traffic dropped upstream</span>
+<span class="cmd">$ cloudflare-api.py</span> <span class="output">--enable-scrubbing --level UNDER_ATTACK</span>
+<span class="output">→ I'm Under Attack mode: ENABLED</span>
+<span class="output">→ Challenge page: active for all visitors</span>
+<span class="cmd">$ iptables</span> <span class="output">-A INPUT -p tcp --syn -m limit --limit 1/s -j ACCEPT</span>
+<span class="output">→ SYN rate limit: ACTIVE ✓</span><span class="cursor-blink"></span>`
+  }
+];
+
+const LIFECYCLE_DATA = [
+  {
+    id: "identify", label: "IDENTIFY", icon: "🔎", cls: "identify",
+    title: "Identify — Know Your Assets & Risks",
+    items: [
+      { title: "Asset Inventory", desc: "Catalog all hardware, software, and data assets with criticality ratings" },
+      { title: "Risk Assessment", desc: "Evaluate threats, vulnerabilities, and likelihood of exploitation" },
+      { title: "Governance", desc: "Define policies, roles, and regulatory compliance requirements" },
+      { title: "Supply Chain Risk", desc: "Assess third-party vendor and partner security posture" }
+    ]
+  },
+  {
+    id: "protect", label: "PROTECT", icon: "🛡️", cls: "protect",
+    title: "Protect — Implement Safeguards",
+    items: [
+      { title: "Access Control", desc: "Zero-trust, MFA, privileged access management" },
+      { title: "Data Security", desc: "Encryption at rest/transit, DLP, classification" },
+      { title: "Awareness Training", desc: "Regular phishing simulations and security education" },
+      { title: "Secure Config", desc: "Hardened baselines, patch management, config scanning" }
+    ]
+  },
+  {
+    id: "detect", label: "DETECT", icon: "📡", cls: "detect",
+    title: "Detect — Identify Anomalies & Events",
+    items: [
+      { title: "Continuous Monitoring", desc: "24/7 SIEM alerts, EDR telemetry, NDR" },
+      { title: "Detection Processes", desc: "YARA rules, sigma rules, behavioral analytics" },
+      { title: "Threat Hunting", desc: "Proactive hypothesis-driven search for hidden threats" },
+      { title: "Anomaly Detection", desc: "ML-based UEBA for insider threat and account compromise" }
+    ]
+  },
+  {
+    id: "respond", label: "RESPOND", icon: "⚡", cls: "respond",
+    title: "Respond — Contain & Eradicate Threats",
+    items: [
+      { title: "Response Planning", desc: "Activate IR plan, assemble team, establish comms" },
+      { title: "Containment", desc: "Isolate affected systems, block IOCs, preserve evidence" },
+      { title: "Eradication", desc: "Remove malware, close vulnerabilities, evict adversary" },
+      { title: "Communications", desc: "Notify stakeholders, regulators, law enforcement as required" }
+    ]
+  },
+  {
+    id: "recover", label: "RECOVER", icon: "🔄", cls: "recover",
+    title: "Recover — Restore Operations",
+    items: [
+      { title: "Recovery Planning", desc: "Prioritize restoration of critical systems and services" },
+      { title: "Improvements", desc: "Update controls and processes based on lessons learned" },
+      { title: "Communications", desc: "Internal and public communications about recovery status" },
+      { title: "Lessons Learned", desc: "Post-incident review, metrics analysis, training updates" }
+    ]
+  }
+];
+
+const FRAMEWORKS = [
+  {
+    logo: '<span class="mitre">MITRE ATT&CK</span>',
+    title: "Adversarial Tactics, Techniques & Common Knowledge",
+    desc: "A globally-accessible knowledge base of adversary tactics and techniques based on real-world observations used for threat modeling and detection.",
+    pillars: ["Reconnaissance","Resource Dev","Initial Access","Execution","Persistence","Privilege Esc","Defense Evasion","Credential Access","Discovery","Lateral Movement","Collection","Exfiltration"],
+    adoption: 94
+  },
+  {
+    logo: '<span class="nist">NIST CSF 2.0</span>',
+    title: "National Institute of Standards & Technology Cybersecurity Framework",
+    desc: "Voluntary framework for improving critical infrastructure cybersecurity, now expanded to include the Govern function alongside five core functions.",
+    pillars: ["Govern","Identify","Protect","Detect","Respond","Recover"],
+    adoption: 89
+  },
+  {
+    logo: '<span class="iso">ISO/IEC 27001</span>',
+    title: "International Standard for Information Security Management",
+    desc: "International standard specifying requirements for an information security management system (ISMS). Certifiable standard with 93 controls across 4 themes.",
+    pillars: ["Context","Leadership","Planning","Support","Operation","Evaluation","Improvement"],
+    adoption: 78
+  },
+  {
+    logo: '<span class="cis">CIS Controls v8</span>',
+    title: "Center for Internet Security — Critical Security Controls",
+    desc: "Prescriptive, prioritized set of 18 cybersecurity best practices and 153 safeguards organized by implementation group for organizations of all sizes.",
+    pillars: ["IG1 Basic","IG2 Foundational","IG3 Organizational","Asset Mgmt","Access Control","Incident Response"],
+    adoption: 82
+  }
+];
+
+const TOOLS = [
+  { icon: "🔬", name: "Wireshark", cat: "Network Analysis", desc: "World's most widely used network protocol analyzer for traffic capture and analysis.", badge: "open" },
+  { icon: "🕵️", name: "Metasploit", cat: "Penetration Testing", desc: "Most widely used penetration testing framework with 2000+ exploits and 500+ payloads.", badge: "open" },
+  { icon: "📊", name: "Splunk SIEM", cat: "Security Monitoring", desc: "Enterprise SIEM platform for log aggregation, correlation, alerting, and threat hunting.", badge: "commercial" },
+  { icon: "🔍", name: "Elastic SIEM", cat: "Threat Detection", desc: "Open SIEM built on Elastic Stack with MITRE ATT&CK-aligned detection rules.", badge: "open" },
+  { icon: "🦠", name: "YARA", cat: "Malware Research", desc: "Pattern-matching tool for identifying malware samples. The de facto standard for malware classification.", badge: "open" },
+  { icon: "🌐", name: "Zeek (Bro)", cat: "Network Security Monitor", desc: "Powerful network analysis framework for passive traffic monitoring and log generation.", badge: "open" },
+  { icon: "🔐", name: "Hashicorp Vault", cat: "Secrets Management", desc: "Centralized secrets management for tokens, passwords, certificates, and encryption keys.", badge: "open" },
+  { icon: "🧬", name: "Volatility3", cat: "Memory Forensics", desc: "Framework for extracting digital artifacts from RAM dumps for forensic investigation.", badge: "open" },
+  { icon: "🎯", name: "CrowdStrike Falcon", cat: "EDR/XDR", desc: "AI-native cybersecurity platform with EDR, threat intelligence, and managed detection.", badge: "commercial" },
+  { icon: "🔗", name: "MISP", cat: "Threat Intelligence", desc: "Open-source threat intelligence platform for sharing, storing, and correlating IOCs.", badge: "open" },
+  { icon: "🛡️", name: "Wazuh", cat: "SIEM + EDR", desc: "Open XDR platform for threat detection, integrity monitoring, and incident response.", badge: "open" },
+  { icon: "⚡", name: "Velociraptor", cat: "DFIR", desc: "Advanced DFIR tool for endpoint visibility, live response, and forensic artifact collection.", badge: "open" },
+];
+
+const INTEL_FEED = [
+  { time: "00:04", title: "LockBit 4.0 Sample Detected", desc: "New ransomware variant with Salsa20 encryption targeting ESXi hypervisors. 47 IOCs extracted.", sev: "critical", col: "var(--accent-red)" },
+  { time: "00:11", title: "APT29 Infrastructure Active", desc: "Cozy Bear C2 domain cluster re-registered. Targeting EU government ministries via spear-phishing.", sev: "critical", col: "var(--accent-red)" },
+  { time: "00:22", title: "Mass CVE-2025-1337 Scanning", desc: "Global Shodan-based scanning for Ivanti VPN appliances. PoC exploit published 6h ago.", sev: "high", col: "var(--accent-orange)" },
+  { time: "00:38", title: "BEC Campaign: Finance Sector", desc: "Business email compromise targeting CFOs with fraudulent wire transfer requests. 12 victims.", sev: "high", col: "var(--accent-orange)" },
+  { time: "00:51", title: "DDoS: 2.4Tbps UDP Flood", desc: "Largest observed attack this week. Multiple DNS amplification vectors. Origin: IoT botnet.", sev: "high", col: "var(--accent-orange)" },
+  { time: "01:02", title: "GitHub Actions Supply Chain", desc: "Malicious GitHub Action found in 23 popular repositories. Credentials exfiltrated via env vars.", sev: "critical", col: "var(--accent-red)" },
+  { time: "01:17", title: "Credential Dump: 14M Records", desc: "Database of leaked credentials from dark web forum. Includes Fortune 500 corporate emails.", sev: "medium", col: "var(--accent-yellow)" },
+  { time: "01:33", title: "Kubernetes RBAC Misconfiguration", desc: "Widespread cluster-admin binding to default service accounts detected in cloud deployments.", sev: "medium", col: "var(--accent-yellow)" },
+  { time: "01:48", title: "Emotet Resurgence Observed", desc: "New Emotet wave with updated loader. Dropped via OneNote documents. 8 C2 servers active.", sev: "high", col: "var(--accent-orange)" },
+  { time: "02:05", title: "Azure AD Token Abuse", desc: "PRT (Primary Refresh Token) harvesting via MiTM proxy. Bypasses MFA. 3 orgs impacted.", sev: "critical", col: "var(--accent-red)" }
+];
+
+const GEO_DATA = [
+  { country: "🇨🇳 China", count: "41,203", pct: 100 },
+  { country: "🇷🇺 Russia", count: "29,447", pct: 71 },
+  { country: "🇧🇷 Brazil", count: "12,891", pct: 31 },
+  { country: "🇮🇳 India", count: "9,334", pct: 22 },
+  { country: "🇺🇸 USA", count: "8,120", pct: 19 }
+];
+
+const IOC_DATA = [
+  { label: "IP", value: "185.234.219[.]47" },
+  { label: "DOM", value: "update-sys32[.]ru" },
+  { label: "HASH", value: "a3f4e5...d91c2b" },
+  { label: "IP", value: "91.108.4[.]174" },
+  { label: "URL", value: "cdn-secure[.]cc/payload.ps1" },
+  { label: "CERT", value: "SHA1: 3a9f...e221" }
+];
+
+const RESOURCES = [
+  { type: "Database", title: "MITRE ATT&CK Navigator", desc: "Interactive matrix for annotating and visualizing ATT&CK coverage and gaps in detection.", link: "attack.mitre.org" },
+  { type: "Cert", title: "SANS GIAC Certifications", desc: "Industry-recognized technical security certifications: GCIH, GPEN, GCFA, GREM, and more.", link: "giac.org" },
+  { type: "Feed", title: "Abuse.ch Threat Intel", desc: "Free open-source threat intelligence feeds including URLhaus, MalwareBazaar, and Feodo.", link: "abuse.ch" },
+  { type: "Standard", title: "OWASP Top 10 2025", desc: "The most critical web application security risks updated annually by the OWASP Foundation.", link: "owasp.org/Top10" },
+  { type: "Training", title: "Hack The Box Academy", desc: "Hands-on cybersecurity training labs covering offensive and defensive security topics.", link: "academy.hackthebox.com" },
+  { type: "Tool", title: "VirusTotal Intelligence", desc: "Aggregate malware scanning with 70+ AV engines. API available for automated IOC enrichment.", link: "virustotal.com" },
+  { type: "Report", title: "Verizon DBIR 2025", desc: "Annual Data Breach Investigations Report analyzing thousands of confirmed breach incidents.", link: "verizon.com/dbir" },
+  { type: "Database", title: "NVD — NIST Vuln Database", desc: "US government repository of standards-based vulnerability management data in CVE format.", link: "nvd.nist.gov" }
+];
+
+// ===== CANVAS BACKGROUND =====
+(function() {
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  let cols, drops, chars = 'アイウエオカキクケコ0123456789ABCDEF<>/{}[]!@#$%';
+  function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / 18);
+    drops = Array(cols).fill(1);
+  }
+  function draw() {
+    ctx.fillStyle = 'rgba(6,11,20,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(0,229,160,0.4)';
+    ctx.font = '12px Share Tech Mono';
+    drops.forEach((y, x) => {
+      const c = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(c, x * 18, y * 18);
+      if (y * 18 > canvas.height && Math.random() > 0.975) drops[x] = 0;
+      drops[x]++;
+    });
+  }
+  init();
+  setInterval(draw, 60);
+  window.addEventListener('resize', init);
+})();
+
+(function() {
+  const canvas = document.getElementById('network-canvas');
+  const ctx = canvas.getContext('2d');
+  let nodes = [], mouse = { x: -999, y: -999 };
+  function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    nodes = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: Math.random() * 2.5 + 1.5,
+      threat: Math.random() < 0.15
+    }));
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+      if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+    });
+    nodes.forEach((a, i) => {
+      nodes.slice(i + 1).forEach(b => {
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d < 140) {
+          ctx.strokeStyle = `rgba(0,229,160,${0.15 * (1 - d / 140)})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      });
+      const dm = Math.hypot(a.x - mouse.x, a.y - mouse.y);
+      if (dm < 180) {
+        ctx.strokeStyle = `rgba(0,229,160,${0.4 * (1 - dm / 180)})`;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+      ctx.fillStyle = a.threat ? 'rgba(255,45,85,0.8)' : 'rgba(0,229,160,0.7)';
+      ctx.fill();
+    });
+  }
+  init();
+  setInterval(draw, 30);
+  canvas.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  window.addEventListener('resize', init);
+})();
+
+// ===== TICKER =====
+(function() {
+  const msgs = [
+    "CRITICAL: New LockBit 4.0 variant targeting healthcare sector globally",
+    "HIGH: Mass exploitation of CVE-2025-2847 in Cisco IOS XE detected",
+    "ALERT: APT41 spear-phishing campaign targeting semiconductor companies",
+    "WARNING: 2.4 Tbps DDoS attack observed on major DNS infrastructure",
+    "CRITICAL: Supply chain compromise in popular npm package (140K downloads/week)",
+    "HIGH: Credential stuffing campaign against banking portals — 2.1M attempts/hr",
+    "ALERT: Zero-day in Windows Print Spooler actively exploited in the wild",
+    "WARNING: Large-scale BGP hijacking event affecting APAC routing tables"
+  ];
+  const t = document.getElementById('tickerTrack');
+  const allMsgs = [...msgs, ...msgs];
+  t.innerHTML = allMsgs.map(m => `<span>${m}</span>`).join('');
+})();
+
+// ===== COUNTER ANIMATION =====
+function animateCounter(el, target, suffix = '') {
+  const isDecimal = target % 1 !== 0;
+  let start = 0, dur = 2000, startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    const p = Math.min((ts - startTime) / dur, 1);
+    const v = p * target;
+    el.textContent = (isDecimal ? v.toFixed(2) : Math.floor(v)) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ===== HERO COUNTERS =====
+document.querySelectorAll('.hero-stat-num[data-count]').forEach(el => {
+  const obs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      animateCounter(el, parseInt(el.dataset.count));
+      obs.disconnect();
+    }
+  });
+  obs.observe(el);
+});
+
+// ===== STAT COUNTERS =====
+document.querySelectorAll('.stat-number.counter[data-target]').forEach(el => {
+  const obs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      const t = parseFloat(el.dataset.target);
+      animateCounter(el, t);
+      obs.disconnect();
+    }
+  });
+  obs.observe(el);
+});
+
+// ===== BUILD THREATS =====
+(function() {
+  const grid = document.getElementById('threatsGrid');
+  THREATS.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = `threat-card reveal reveal-delay-${(i%4)+1}`;
+    div.innerHTML = `
+      <div class="threat-card-header">
+        <div class="threat-icon ${t.severity}">${t.icon}</div>
+        <span class="severity-badge ${t.severity}">${t.severity}</span>
+      </div>
+      <div class="threat-name">${t.name}</div>
+      <div class="threat-desc">${t.desc}</div>
+      <div class="threat-metrics">
+        <div class="threat-metric"><div class="threat-metric-label">Prevalence</div><div class="threat-metric-value">${t.prevalence}</div></div>
+        <div class="threat-metric"><div class="threat-metric-label">Avg Cost</div><div class="threat-metric-value">${t.avgCost}</div></div>
+        <div class="threat-metric"><div class="threat-metric-label">Detection</div><div class="threat-metric-value">${t.detection}</div></div>
+      </div>
+      <div class="threat-bar"><div class="threat-bar-fill" style="width:0%;background:${t.severity==='critical'?'var(--accent-red)':t.severity==='high'?'var(--accent-orange)':'var(--accent-yellow)'};" data-width="${t.riskPct}"></div></div>
+      <div class="threat-tags">${t.tags.map(tag=>`<span class="threat-tag">${tag}</span>`).join('')}</div>
+      <button class="expand-btn" onclick="toggleThreat(this)"><span>VIEW MITIGATIONS</span><span class="expand-arrow">▼</span></button>
+      <div class="threat-card-expand">${t.details}</div>
+    `;
+    grid.appendChild(div);
+  });
+  // Animate bars on intersection
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('[data-width]').forEach(bar => {
+          setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 300);
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+  grid.querySelectorAll('.threat-card').forEach(c => obs.observe(c));
+})();
+
+function toggleThreat(btn) {
+  const card = btn.closest('.threat-card');
+  card.classList.toggle('expanded');
+  btn.querySelector('span:first-child').textContent = card.classList.contains('expanded') ? 'HIDE MITIGATIONS' : 'VIEW MITIGATIONS';
+}
+
+// ===== BUILD ATTACK MATRIX =====
+(function() {
+  const grid = document.getElementById('attackMatrix');
+  const tooltip = document.getElementById('matrixTooltip');
+  // Header row
+  grid.appendChild(Object.assign(document.createElement('div'), { className: 'matrix-header', style: 'background:rgba(0,0,0,0.3);border-color:transparent;', textContent: '' }));
+  TACTICS.forEach(t => {
+    const h = document.createElement('div');
+    h.className = 'matrix-header';
+    h.textContent = t;
+    grid.appendChild(h);
+  });
+  TECHNIQUES.forEach(row => {
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'matrix-row-label';
+    labelDiv.textContent = ['Initial','Discovery','Execution','Persistence','Priv Esc','Defense Ev','Cred Access'][TECHNIQUES.indexOf(row)] || 'Technique';
+    grid.appendChild(labelDiv);
+    row.forEach((tech, ci) => {
+      const lvl = Math.random() < 0.15 ? 0 : Math.floor(Math.random() * 4) + 1;
+      const cell = document.createElement('div');
+      cell.className = `matrix-cell lvl${lvl}`;
+      cell.textContent = tech;
+      cell.addEventListener('mouseenter', e => {
+        const lvlNames = ['','Low','Moderate','High','Critical'];
+        tooltip.innerHTML = `<strong style="color:var(--accent-green)">${tech}</strong><br><span style="color:var(--text-secondary)">Tactic: ${TACTICS[ci]}</span><br><span>Frequency: ${lvlNames[lvl]||'Inactive'}</span>`;
+        tooltip.style.display = 'block';
+      });
+      cell.addEventListener('mousemove', e => {
+        tooltip.style.left = (e.clientX + 15) + 'px';
+        tooltip.style.top = (e.clientY - 40) + 'px';
+      });
+      cell.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+      grid.appendChild(cell);
+    });
+  });
+})();
+
+// ===== BUILD RESPONSE PLAYBOOKS =====
+(function() {
+  const tabBar = document.getElementById('responseTabs');
+  const content = document.getElementById('responseContent');
+  RESPONSE_PLAYBOOKS.forEach((pb, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i===0?' active':'');
+    btn.textContent = pb.label;
+    btn.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tc-'+pb.id).classList.add('active');
+    };
+    tabBar.appendChild(btn);
+    const div = document.createElement('div');
+    div.id = 'tc-'+pb.id;
+    div.className = 'tab-content' + (i===0?' active':'');
+    div.innerHTML = `
+      <div class="response-steps">
+        ${pb.steps.map(s=>`<div class="response-step">
+          <div class="step-number">${s.n}</div>
+          <div class="step-content">
+            <div class="step-title">${s.title}</div>
+            <div class="step-desc">${s.desc}</div>
+            <div class="step-time">⏱ ${s.time}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="response-info-panel">
+        <div class="info-panel-title">▶ TERMINAL COMMANDS</div>
+        <div class="info-terminal">${pb.terminal}</div>
+      </div>
+    `;
+    content.appendChild(div);
+  });
+})();
+
+// ===== BUILD LIFECYCLE =====
+(function() {
+  const wrapper = document.getElementById('lifecycleWrapper');
+  const detail = document.getElementById('lifecycleDetail');
+  LIFECYCLE_DATA.forEach((phase, i) => {
+    const node = document.createElement('div');
+    node.className = 'lifecycle-node';
+    node.innerHTML = `
+      <div class="lifecycle-circle ${phase.cls}" onclick="showLifecycle('${phase.id}')">
+        <div class="lifecycle-icon">${phase.icon}</div>
+      </div>
+      <div class="lifecycle-label">${phase.label}</div>
+    `;
+    wrapper.appendChild(node);
+    if (i < LIFECYCLE_DATA.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'lifecycle-connector';
+      wrapper.appendChild(conn);
+    }
+  });
+})();
+
+window.showLifecycle = function(id) {
+  const phase = LIFECYCLE_DATA.find(p => p.id === id);
+  const d = document.getElementById('lifecycleDetail');
+  d.innerHTML = `
+    <div class="lifecycle-detail-title">// ${phase.title}</div>
+    <div class="lifecycle-items">
+      ${phase.items.map(it=>`<div class="lifecycle-item">
+        <div class="lifecycle-item-title">${it.title}</div>
+        <div class="lifecycle-item-desc">${it.desc}</div>
+      </div>`).join('')}
+    </div>
+  `;
+  d.classList.add('active');
+};
+
+// ===== BUILD INTEL FEED =====
+(function() {
+  const feedItems = document.getElementById('feedItems');
+  INTEL_FEED.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+    div.innerHTML = `
+      <div class="feed-item-time">${item.time}</div>
+      <div class="feed-item-content">
+        <div class="feed-item-title">${item.title}</div>
+        <div class="feed-item-desc">${item.desc}</div>
+      </div>
+      <div class="feed-item-severity" style="color:${item.col};border-color:${item.col}">${item.sev}</div>
+    `;
+    feedItems.appendChild(div);
+  });
+
+  // Auto-add new items
+  const newItems = [
+    { title: "SOHO Router Botnet Expanding", desc: "500K compromised ASUS/TP-Link routers forming new DDoS infrastructure.", sev: "high", col: "var(--accent-orange)" },
+    { title: "PyPI Typosquatting Campaign", desc: "23 malicious packages mimicking popular libraries. Crypto-stealer payload.", sev: "medium", col: "var(--accent-yellow)" }
+  ];
+  let idx = 0;
+  setInterval(() => {
+    if (idx < newItems.length) {
+      const item = newItems[idx++];
+      const now = new Date();
+      const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      const div = document.createElement('div');
+      div.className = 'feed-item';
+      div.style.background = 'rgba(0,229,160,0.03)';
+      div.style.borderLeft = '2px solid var(--accent-green)';
+      div.innerHTML = `
+        <div class="feed-item-time" style="color:var(--accent-green)">${time}</div>
+        <div class="feed-item-content">
+          <div class="feed-item-title">${item.title}</div>
+          <div class="feed-item-desc">${item.desc}</div>
+        </div>
+        <div class="feed-item-severity" style="color:${item.col};border-color:${item.col}">${item.sev}</div>
+      `;
+      feedItems.prepend(div);
+    }
+  }, 8000);
+
+  // Geo List
+  const geoList = document.getElementById('geoList');
+  GEO_DATA.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'geo-item reveal';
+    div.innerHTML = `<div class="geo-header"><span class="geo-country">${g.country}</span><span class="geo-count">${g.count}</span></div><div class="geo-bar"><div class="geo-fill" style="width:0%" data-width="${g.pct}"></div></div>`;
+    geoList.appendChild(div);
+  });
+
+  // IOC List
+  const iocList = document.getElementById('iocList');
+  IOC_DATA.forEach(ioc => {
+    const div = document.createElement('div');
+    div.className = 'ioc-item';
+    div.innerHTML = `<span>[${ioc.label}]</span> ${ioc.value}`;
+    iocList.appendChild(div);
+  });
+
+  // Mini Chart
+  const canvas = document.getElementById('miniChart');
+  const ctx = canvas.getContext('2d');
+  const data = [42, 18, 12, 9, 8, 11];
+  const labels = ['Ransomware','APT','Phishing','DDoS','Insider','Supply Chain'];
+  const colors = ['rgba(255,45,85,0.8)','rgba(255,107,53,0.8)','rgba(255,215,0,0.8)','rgba(0,180,255,0.8)','rgba(0,229,160,0.8)','rgba(150,100,255,0.8)'];
+  canvas.width = canvas.offsetWidth || 300;
+  canvas.height = 120;
+  const bw = canvas.width / data.length - 4;
+  const max = Math.max(...data);
+  data.forEach((v, i) => {
+    const x = i * (bw + 4) + 2;
+    const h = (v / max) * 90;
+    const y = 100 - h;
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(x, y, bw, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '8px Share Tech Mono';
+    ctx.fillText(v+'%', x + bw/2 - 8, y - 4);
+  });
+})();
+
+// ===== BUILD FRAMEWORKS =====
+(function() {
+  const grid = document.getElementById('frameworksGrid');
+  FRAMEWORKS.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = `framework-card reveal reveal-delay-${i+1}`;
+    div.innerHTML = `
+      <div class="framework-card-logo">${f.logo}</div>
+      <div class="framework-card-title">${f.title}</div>
+      <div class="framework-desc">${f.desc}</div>
+      <div class="framework-pillars">${f.pillars.map(p=>`<span class="framework-pillar">${p}</span>`).join('')}</div>
+      <div class="framework-adoption">
+        <div class="adoption-label">Industry Adoption: ${f.adoption}%</div>
+        <div class="adoption-bar"><div class="adoption-fill" style="width:0%" data-width="${f.adoption}"></div></div>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+})();
+
+// ===== BUILD TOOLS =====
+(function() {
+  const grid = document.getElementById('toolsGrid');
+  TOOLS.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = `tool-card reveal reveal-delay-${(i%4)+1}`;
+    div.innerHTML = `
+      <div class="tool-header">
+        <div class="tool-icon">${t.icon}</div>
+        <div>
+          <div class="tool-name">${t.name}</div>
+          <div class="tool-category">${t.cat}</div>
+        </div>
+      </div>
+      <div class="tool-desc">${t.desc}</div>
+      <span class="tool-badge ${t.badge}">${t.badge === 'open' ? 'OPEN SOURCE' : 'COMMERCIAL'}</span>
+    `;
+    grid.appendChild(div);
+  });
+})();
+
+// ===== BUILD RESOURCES =====
+(function() {
+  const grid = document.getElementById('resourcesGrid');
+  RESOURCES.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = `resource-card reveal reveal-delay-${(i%4)+1}`;
+    div.innerHTML = `
+      <div class="resource-type">${r.type}</div>
+      <div class="resource-title">${r.title}</div>
+      <div class="resource-desc">${r.desc}</div>
+      <div class="resource-link">${r.link}</div>
+    `;
+    grid.appendChild(div);
+  });
+})();
+
+// ===== INTERSECTION OBSERVER for REVEAL + BAR FILLS =====
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      e.target.querySelectorAll('[data-width]').forEach(bar => {
+        setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 400);
+      });
+    }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+// ===== NAV TOGGLE =====
+function toggleNav() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+// ===== ACTIVE NAV HIGHLIGHT =====
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 100) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active-nav', a.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+</body>
+</html>
